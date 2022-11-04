@@ -1,0 +1,11 @@
+Dockerfile
+__pycache__
+wandb
+
+# log folders
+*-pixel
+
+
+
+
+
