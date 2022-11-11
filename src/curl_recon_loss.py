@@ -505,7 +505,7 @@ class CurlSacAgent(object):
         self.log_alpha_optimizer.step()
 
     def update_curl_encoder_and_decoder(
-        self, orig_obs, obs_anchor, obs_pos, target_obs, step, WB_LOG
+        self, orig_obs, obs_anchor, obs_pos, target_obs, step, WB_LOG, c1, c2, c3
     ):
         z_a = self.CURL.encode(obs_anchor)
         z_pos = self.CURL.encode(obs_pos, ema=True)
@@ -535,7 +535,7 @@ class CurlSacAgent(object):
         consis_loss = F.mse_loss(h0, h1)
 
         loss = (
-            0.4 * curl_loss + 0.0 * rec_loss + 0.0 * self.decoder_latent_lambda * latent_loss + 0.6 * consis_loss
+            c1 * curl_loss + c2 * rec_loss + self.decoder_latent_lambda * latent_loss + c3 * consis_loss
         )
 
         self.encoder_optimizer.zero_grad()
@@ -557,7 +557,7 @@ class CurlSacAgent(object):
             wandb.log({"train/total_loss": loss, "step": step})
             
 
-    def update(self, replay_buffer, step, WB_LOG):
+    def update(self, replay_buffer, step, WB_LOG, c1, c2, c3):
         if self.encoder_type == "pixel":
             (
                 orig_obs,
@@ -591,7 +591,7 @@ class CurlSacAgent(object):
         if step % self.curl_encoder_update_freq == 0 and self.encoder_type == "pixel":
             obs_anchor, obs_pos = info_dict["obs_anchor"], info_dict["obs_pos"]
             self.update_curl_encoder_and_decoder(
-                orig_obs, obs_anchor, obs_pos, obs_anchor, step, WB_LOG
+                orig_obs, obs_anchor, obs_pos, obs_anchor, step, WB_LOG, c1, c2, c3
             )
 
     def save(self, model_dir, step):

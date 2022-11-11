@@ -16,12 +16,12 @@ CFG = {
     "train": {
         "agent": "curl_sac",
         "init_steps": 1000,
-        "num_train_steps": 5000,
+        "num_train_steps": 300000,
         "num_updates": 1,
         "batch_size": 128, #512
         "hidden_dim": 1024,
     },
-    "eval": {"eval_freq": 1000, "num_eval_episodes": 10, "mode": "video_easy"},
+    "eval": {"eval_freq": 1000, "num_eval_episodes": 10, "mode": "video_easy"}, # mode in {"video_easy", "color_hard", "color_easy", "video_hard", "train"}
     "critic": {"lr": 1e-3, "beta": 0.9, "tau": 0.01, "target_update_freq": 2},
     "actor": {
         "lr": 1e-3,
@@ -57,5 +57,8 @@ CFG = {
         "log_interval": 100,
         "curl_latent_dim": 128,
         "num_cls": 4,
+        "c1": 0.33,
+        "c2": 0.33,
+        "c3" : 0.33,
     },
 }

@@ -203,6 +203,9 @@ def evaluate(env_eval, agent, video, num_episodes, step, device):
 
 
 def train(env, env_eval, agent, video, model_dir, replay_buffer, buffer_dir, device):
+    c1 = config.params.c1
+    c2 = config.params.c2
+    c3 = config.params.c3
     episode, episode_reward, done = 0, 0, True
     start_time = time.time()
     mean_all_episode_rewards = []
@@ -255,7 +258,7 @@ def train(env, env_eval, agent, video, model_dir, replay_buffer, buffer_dir, dev
         # run training update
         if step >= config.train.init_steps:
             for _ in range(config.train.num_updates):
-                agent.update(replay_buffer, step, WB_LOG)
+                agent.update(replay_buffer, step, WB_LOG, c1, c2, c3)
 
         next_obs, reward, done, _ = env.step(action)
 
