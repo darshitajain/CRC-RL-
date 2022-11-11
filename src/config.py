@@ -16,7 +16,7 @@ CFG = {
     "train": {
         "agent": "curl_sac",
         "init_steps": 1000,
-        "num_train_steps": 300000,
+        "num_train_steps": 500000,
         "num_updates": 1,
         "batch_size": 128, #512
         "hidden_dim": 1024,
