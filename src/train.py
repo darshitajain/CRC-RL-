@@ -17,7 +17,7 @@ from collections import Counter
 from env.wrappers import make_env
 
 config = Config.from_json(CFG)
-WB_LOG = True
+WB_LOG = False
 console = Console()
 
 transforms = {
