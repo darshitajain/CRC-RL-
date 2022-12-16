@@ -10,13 +10,14 @@ CFG = {
         "action_repeat": 8,  # 2,#4,
         "frame_stack": 3,
         "episode_length":1000,
-        "transform": "random_crop",  # choose from (random_crop, center_crop_image, random_conv)
+        "transform1": "random_crop",  # choose from (random_crop, center_crop_image, random_overlay)
+        "transform2": "random_overlay",
     },
     "replay_buffer": {"capacity": 100000},
     "train": {
         "agent": "curl_sac",
         "init_steps": 1000,
-        "num_train_steps": 500000,
+        "num_train_steps": 100000,
         "num_updates": 1,
         "batch_size": 128, #512
         "hidden_dim": 1024,

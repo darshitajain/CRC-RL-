@@ -11,13 +11,13 @@ from video import VideoRecorder
 from config import CFG
 from curl_recon_loss import CurlSacAgent
 from utils import Config
-from augmentations import center_crop_image, random_conv, random_crop  
+from augmentations import center_crop_image, random_conv, random_crop, random_overlay 
 from visualize import visualize_tsne
 from collections import Counter
 from env.wrappers import make_env
 
 config = Config.from_json(CFG)
-WB_LOG = False
+WB_LOG = True
 console = Console()
 
 transforms = {
@@ -25,6 +25,7 @@ transforms = {
     # "random_shift": random_shift,
     "random_conv": random_conv,
     "center_crop_image": center_crop_image,
+    "random_overlay": random_overlay,
 }
 
 if config.params.seed == -1:
@@ -278,10 +279,10 @@ def main():
         wandb.login()
         wandb.init(project=config.env.domain_name, config=CFG)
 
-    if config.env.transform == "random_conv":
+    if config.env.transform2 == "random_conv":
         pre_transform_image_size = config.env.image_size
     else:
-    	pre_transform_image_size = config.env.pre_transform_image_size
+        pre_transform_image_size = config.env.pre_transform_image_size
         
     env = make_env(
         domain_name=config.env.domain_name,
@@ -352,7 +353,8 @@ def main():
         batch_size=config.train.batch_size,
         device=device,
         image_size=config.env.image_size,
-        transform=transforms[config.env.transform],
+        transform1=transforms[config.env.transform1],
+        transform2=transforms[config.env.transform2]
     )
 
     agent = make_agent(

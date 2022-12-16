@@ -50,6 +50,12 @@ def make_dir(dir_path):
         os.mkdir(dir_path)
     return dir_path
 
+def load_config(key=None):
+    path = os.path.join('../setup', 'config.cfg')
+    with open(path) as f:
+        data = json.load(f)
+    return data[key] if key is not None else data
+
 
 def preprocess_obs(obs, bits=5):
     """Preprocessing image, see https://arxiv.org/abs/1807.03039."""
@@ -74,13 +80,15 @@ class ReplayBuffer(Dataset):
         batch_size,
         device,
         image_size=84,
-        transform=None,
+        transform1=None,
+        transform2=None
     ):
         self.capacity = capacity
         self.batch_size = batch_size
         self.device = device
         self.image_size = image_size
-        self.transform = transform
+        self.transform1 = transform1
+        self.transform2 = transform2
         # pixels obs are stored as uint8
         obs_dtype = np.uint8
 
@@ -114,29 +122,37 @@ class ReplayBuffer(Dataset):
         next_obses = self.next_obses[idxs]
         pos = obses.copy()
 
-        obses = self.transform(obses, self.image_size)
+        obses = self.transform1(obses, self.image_size)
+        obses = torch.as_tensor(obses, device=self.device).float()
+        obses = self.transform2(obses) 
 
-        orig_obs = center_crop_image_batch(orig_obs, self.image_size)
+        #orig_obs = center_crop_image_batch(orig_obs, self.image_size)
+        orig_obs = self.transform1(orig_obs, self.image_size)
 
         #print("after resize", orig_obs.shape, type(orig_obs))
 
-        next_obses = self.transform(next_obses, self.image_size)
-        pos = self.transform(pos, self.image_size)
+        next_obses = self.transform1(next_obses, self.image_size)
+        next_obses = torch.as_tensor(next_obses, device=self.device).float()
+        next_obses = self.transform2(next_obses)
+
+        pos = self.transform1(pos, self.image_size)
+        pos = torch.as_tensor(pos, device=self.device).float()
+        pos = self.transform2(pos)
+        
         #print('inside replay buffer', obses.shape, next_obses.shape)
 
         # visualize augmented images
         # if counter() <= 24:
         #    visualise_aug_obs(obses, self.transform.__name__)
 
-        obses = torch.as_tensor(obses, device=self.device).float()
+        #obses = torch.as_tensor(obses, device=self.device).float()
         orig_obs = torch.as_tensor(orig_obs, device=self.device).float()
-
-        next_obses = torch.as_tensor(next_obses, device=self.device).float()
+        #next_obses = torch.as_tensor(next_obses, device=self.device).float()
         actions = torch.as_tensor(self.actions[idxs], device=self.device)
         rewards = torch.as_tensor(self.rewards[idxs], device=self.device)
         not_dones = torch.as_tensor(self.not_dones[idxs], device=self.device)
 
-        pos = torch.as_tensor(pos, device=self.device).float()
+        #pos = torch.as_tensor(pos, device=self.device).float()
         info_dict = dict(obs_anchor=obses, obs_pos=pos, time_anchor=None, time_pos=None)
 
         return orig_obs, obses, actions, rewards, next_obses, not_dones, info_dict

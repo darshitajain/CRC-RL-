@@ -1,9 +1,12 @@
 import numpy as np
 from skimage.util.shape import view_as_windows
-
+import os
 # import kornia
 import torch
 import torch.nn.functional as F
+import torchvision.transforms as TF
+import torchvision.datasets as datasets
+import utils
 
 
 def random_crop(imgs, output_size):
@@ -102,6 +105,65 @@ def random_shift(imgs, out_size, pad=4):
     crop = h - out_size
     return np.array(kornia.augmentation.RandomCrop((h - crop, w - crop))(imgs))
 '''
+
+places_dataloader = None
+places_iter = None
+
+
+def _load_places(batch_size=128, image_size=84, num_workers=8, use_val=False):
+	global places_dataloader, places_iter
+	partition = 'val' if use_val else 'train'
+	print(f'Loading {partition} partition of places365_standard...')
+	for data_dir in utils.load_config('datasets'):
+		if os.path.exists(data_dir):
+			fp = os.path.join(data_dir, 'places365_standard', partition)
+			if not os.path.exists(fp):
+				print(f'Warning: path {fp} does not exist, falling back to {data_dir}')
+				fp = data_dir
+			places_dataloader = torch.utils.data.DataLoader(
+				datasets.ImageFolder(fp, TF.Compose([
+					TF.RandomResizedCrop(image_size),
+					TF.RandomHorizontalFlip(),
+					TF.ToTensor()
+				])),
+				batch_size=batch_size, shuffle=True,
+				num_workers=num_workers, pin_memory=True)
+			places_iter = iter(places_dataloader)
+			break
+	if places_iter is None:
+		raise FileNotFoundError('failed to find places365 data at any of the specified paths')
+	print('Loaded dataset from', data_dir)
+
+
+def _get_places_batch(batch_size):
+	global places_iter
+	try:
+		imgs, _ = next(places_iter)
+		if imgs.size(0) < batch_size:
+			places_iter = iter(places_dataloader)
+			imgs, _ = next(places_iter)
+	except StopIteration:
+		places_iter = iter(places_dataloader)
+		imgs, _ = next(places_iter)
+	return imgs.cuda()
+
+
+def random_overlay(x, dataset='places365_standard'):
+    """Randomly overlay an image from Places"""
+    global places_iter
+    alpha = 0.5
+    #print("inside random overlay", x.shape, x.shape[0])
+
+    if dataset == 'places365_standard':
+        if places_dataloader is None:
+            _load_places(batch_size=x.shape[0], image_size=x.shape[-1])
+        imgs = _get_places_batch(batch_size=x.shape[0]).repeat(1, x.shape[1]//3, 1, 1)
+    else:
+        raise NotImplementedError(f'overlay has not been implemented for dataset "{dataset}"')
+    #print("type of operands", type(x), type(imgs))
+
+    return ((1-alpha)*(x/255.) + (alpha)*imgs)*255.
+
 
 if __name__ == "__main__":
     out_size = 84
